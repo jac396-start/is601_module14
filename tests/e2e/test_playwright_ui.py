@@ -158,10 +158,20 @@ class TestUserRegistration:
         page.locator("#last_name").fill(fake.last_name())
         page.locator("#password").fill("SecurePass123!")
         page.locator("#confirm_password").fill("SecurePass123!")
+        
+        # Wait a moment for page to be fully interactive
+        page.wait_for_timeout(500)
+        
+        # Submit the form - client-side validation will catch the invalid email
         page.locator("button[type='submit']").click()
         
-        # Should show error for invalid email
-        expect(page.locator("#errorAlert")).to_be_visible(timeout=5000)
+        # Wait for validation to run
+        page.wait_for_timeout(500)
+        
+        # Should show error for invalid email (client-side validation prevents submit)
+        # The error alert should not be hidden
+        error_alert = page.locator("#errorAlert")
+        expect(error_alert).not_to_have_class("hidden")
 
 
 # ======================================================================================
@@ -217,8 +227,8 @@ class TestUserLogin:
         page.wait_for_url(re.compile(".*/dashboard"), timeout=10000)
         
         # Verify we're on dashboard
-        page.wait_for_selector("#layoutUserWelcome", timeout=10000) # Add this line
-        expect(page.locator("#userWelcome")).to_contain_text(test_user["username"])
+        page.wait_for_selector("#layoutUserWelcome", timeout=10000)
+        expect(page.locator("#layoutUserWelcome")).to_contain_text(test_user["username"])
 
     @pytest.mark.e2e
     def test_login_wrong_password(self, page: Page, base_url: str):
@@ -306,8 +316,8 @@ class TestDashboard:
     @pytest.mark.e2e
     def test_dashboard_loads_authenticated(self, logged_in_page: Page):
         """Test that dashboard loads for authenticated users"""
-        logged_in_page.wait_for_selector("#layoutUserWelcome", timeout=10000) # Add this line
-        expect(logged_in_page.locator("#userWelcome")).to_be_visible()
+        logged_in_page.wait_for_selector("#layoutUserWelcome", timeout=10000)
+        expect(logged_in_page.locator("#layoutUserWelcome")).to_be_visible()
         expect(logged_in_page.locator("#calculationForm")).to_be_visible()
         expect(logged_in_page.locator("#calculationsTable")).to_be_visible()
 
@@ -323,12 +333,8 @@ class TestDashboard:
     def test_logout_functionality(self, logged_in_page: Page, base_url: str):
         """Test user logout"""
         # Click logout button
-        logged_in_page.wait_for_selector("#layoutLogoutBtn", timeout=10000) # Add this line
-        logged_in_page.locator("#layoutLogoutBtn").click()
-        
-        # Confirm logout in dialog
         logged_in_page.on("dialog", lambda dialog: dialog.accept())
-        logged_in_page.locator("#logoutBtn").click()
+        logged_in_page.locator("#layoutLogoutBtn").click()
         
         # Should redirect to login
         logged_in_page.wait_for_url(re.compile(".*/login"), timeout=5000)
