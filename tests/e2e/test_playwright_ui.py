@@ -107,7 +107,7 @@ class TestUserRegistration:
         
         # Should show error message
         expect(page.locator("#errorAlert")).to_be_visible(timeout=5000)
-        expect(page.locator("#errorMessage")).to_contain_text("do not match", flags=re.IGNORECASE)
+        expect(page.locator("#errorMessage")).to_contain_text("do not match")
 
     @pytest.mark.e2e
     def test_registration_duplicate_username(self, page: Page, base_url: str):
@@ -217,6 +217,7 @@ class TestUserLogin:
         page.wait_for_url(re.compile(".*/dashboard"), timeout=10000)
         
         # Verify we're on dashboard
+        page.wait_for_selector("#layoutUserWelcome", timeout=10000) # Add this line
         expect(page.locator("#userWelcome")).to_contain_text(test_user["username"])
 
     @pytest.mark.e2e
@@ -305,6 +306,7 @@ class TestDashboard:
     @pytest.mark.e2e
     def test_dashboard_loads_authenticated(self, logged_in_page: Page):
         """Test that dashboard loads for authenticated users"""
+        logged_in_page.wait_for_selector("#layoutUserWelcome", timeout=10000) # Add this line
         expect(logged_in_page.locator("#userWelcome")).to_be_visible()
         expect(logged_in_page.locator("#calculationForm")).to_be_visible()
         expect(logged_in_page.locator("#calculationsTable")).to_be_visible()
@@ -321,7 +323,8 @@ class TestDashboard:
     def test_logout_functionality(self, logged_in_page: Page, base_url: str):
         """Test user logout"""
         # Click logout button
-        logged_in_page.locator("#logoutBtn").click()
+        logged_in_page.wait_for_selector("#layoutLogoutBtn", timeout=10000) # Add this line
+        logged_in_page.locator("#layoutLogoutBtn").click()
         
         # Confirm logout in dialog
         logged_in_page.on("dialog", lambda dialog: dialog.accept())
@@ -481,7 +484,7 @@ class TestCalculationHistory:
         
         # Check history table contains the calculation
         table = logged_in_page.locator("#calculationsTable")
-        expect(table).to_contain_text("addition", flags=re.IGNORECASE)
+        expect(table).to_contain_text("addition")
         expect(table).to_contain_text("15")
         expect(table).to_contain_text("3")
         expect(table).to_contain_text("18")
